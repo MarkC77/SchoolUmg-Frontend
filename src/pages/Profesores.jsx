@@ -1,8 +1,8 @@
-import React, { use, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as API from "../services/data";
 import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
-import JSPDF from "jspdf";
+import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export const Profesores = () => {
@@ -20,8 +20,7 @@ export const Profesores = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-
-    //columnas disponibles para exportación
+    // Columnas disponibles para exportación
     const columnasDisponibles = [
         { key: "usuario", label: "Usuario" },
         { key: "pass", label: "Contraseña" },
@@ -34,6 +33,7 @@ export const Profesores = () => {
         columnasDisponibles.map((c) => c.key)
     );
 
+    // Fetch profesores
     const fetchProfesores = () => {
         setLoading(true);
         API.getProfesores()
@@ -47,7 +47,6 @@ export const Profesores = () => {
             });
     };
 
-
     const Toast = Swal.mixin({
         toast: true,
         position: "top-end",
@@ -56,8 +55,9 @@ export const Profesores = () => {
         timerProgressBar: true,
     });
 
+    // Agregar profesor
     const handleAgregar = () => {
-        setCurrentAlumno({
+        setCurrentProfesor({
             usuario: "",
             pass: "",
             nombre: "",
@@ -66,6 +66,7 @@ export const Profesores = () => {
         setModalOpen(true);
     };
 
+    // Editar profesor
     const handleEditar = (profesor) => {
         setCurrentProfesor({
             usuario: profesor.usuario,
@@ -76,6 +77,7 @@ export const Profesores = () => {
         setModalOpen(true);
     }
 
+    // Eliminar profesor
     const handleEliminar = (usuario) => {
         Swal.fire({
             title: '¿Estás seguro?',
@@ -98,10 +100,10 @@ export const Profesores = () => {
         });
     }
 
+    // Submit modal
     const handleModalSubmit = (e) => {
         e.preventDefault();
-        const { usuario, pass, nombre, email } =
-            currentProfesor;
+        const { usuario, pass, nombre, email } = currentProfesor;
 
         if (!usuario || !nombre) {
             Swal.fire(
@@ -113,6 +115,7 @@ export const Profesores = () => {
         }
 
         if (profesores.some((a) => a.usuario === usuario)) {
+            // Actualizar
             API.actualizarProfesor(usuario, currentProfesor)
                 .then(() => {
                     setModalOpen(false);
@@ -124,6 +127,7 @@ export const Profesores = () => {
                 })
                 .catch((err) => Swal.fire("Error", err.message, "error"));
         } else {
+            // Insertar
             API.insertarProfesor(currentProfesor)
                 .then(() => {
                     setModalOpen(false);
@@ -147,7 +151,7 @@ export const Profesores = () => {
     const currentProfesores = profesores.slice(indexOfFirst, indexOfLast);
     const totalPages = Math.ceil(profesores.length / itemsPerPage);
 
-    //Exportar
+    // Exportar
     const handleExport = (type) => {
         const dataToExport = profesores.map((p) =>
             selectedColumns.reduce((obj, key) => {
@@ -167,7 +171,7 @@ export const Profesores = () => {
             XLSX.utils.book_append_sheet(wb, ws, "Profesores");
             XLSX.writeFile(wb, "Profesores.xlsx");
         } else {
-            const doc = new JSPDF();
+            const doc = new jsPDF();
             doc.setFontSize(16);
             doc.text("Listado de Profesores", 14, 20);
             const head = columnasDisponibles
@@ -195,7 +199,6 @@ export const Profesores = () => {
         );
     };
 
-
     return (
         <div className="container mt-4">
             <div className="d-flex justify-content-between align-items-center mb-3">
@@ -205,6 +208,7 @@ export const Profesores = () => {
                     <button className="btn btn-secondary" onClick={() => setIsColumnsModalOpen(true)}>Exportar</button>
                 </div>
             </div>
+
             {loading ? (
                 <div className="text-center">Cargando...</div>
             ) : (
@@ -233,6 +237,7 @@ export const Profesores = () => {
                             ))}
                         </tbody>
                     </table>
+
                     <nav>
                         <ul className="pagination justify-content-center">
                             {Array.from({ length: totalPages }, (_, i) => (
@@ -244,83 +249,51 @@ export const Profesores = () => {
                     </nav>
                 </>
             )}
-            {
-                modalOpen && (
-                    <div className="modal show d-block" tabIndex="-1">
-                        <div className="modal-dialog">
-                            <form className="modal-content" onSubmit={handleModalSubmit}>
-                                <div className="modal-header">
-                                    <h5 className="modal-title">{currentProfesor?.usuario ? "Editar Profesor" : "Agregar Profesor"}</h5>
-                                    <button type="button" className="btn-close" onClick={() => setModalOpen(false)}></button>
-                                </div>
 
-                                <div className="modal-body">
-                                    <div className="mb-3">
-                                        <label>Usuario</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={currentProfesor.usuario}
-                                            onChange={(e) =>
-                                                setCurrentProfesor({ ...currentProfesor, usuario: e.target.value })
-                                            }
-                                            required
-                                        />
-                                    </div>
-                                    <div className="mb-3">
-                                        <label>Contraseña</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={currentProfesor.pass}
-                                            onChange={(e) =>
-                                                setCurrentProfesor({ ...currentProfesor, pass: e.target.value })
-                                            }
-                                            required
-                                        />
-                                    </div>
-                                    <div className="mb-3">
-                                        <label>Nombre</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={currentProfesor.nombre}
-                                            onChange={(e) =>
-                                                setCurrentProfesor({ ...currentProfesor, nombre: e.target.value })
-                                            }
-                                            required
-                                        />
-                                    </div>
-                                    <div className="mb-3">
-                                        <label>Email</label>
-                                        <input
-                                            type="email"
-                                            className="form-control"
-                                            value={currentProfesor.email}
-                                            onChange={(e) =>
-                                                setCurrentProfesor({ ...currentProfesor, email: e.target.value })
-                                            }
-                                        />
-                                    </div>
+            {/* Modal Profesor */}
+            {modalOpen && (
+                <div className="modal show d-block" tabIndex="-1">
+                    <div className="modal-dialog">
+                        <form className="modal-content" onSubmit={handleModalSubmit}>
+                            <div className="modal-header">
+                                <h5 className="modal-title">{currentProfesor.usuario ? "Editar Profesor" : "Agregar Profesor"}</h5>
+                                <button type="button" className="btn-close" onClick={() => setModalOpen(false)}></button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="mb-3">
+                                    <label>Usuario</label>
+                                    <input type="text" className="form-control" value={currentProfesor.usuario}
+                                        onChange={(e) => setCurrentProfesor({ ...currentProfesor, usuario: e.target.value })}
+                                        required />
                                 </div>
-                                <div className="modal-footer">
-                                    <button
-                                        type="button"
-                                        className="btn btn-secondary"
-                                        onClick={() => setModalOpen(false)}
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button type="submit" className="btn btn-primary">
-                                        Guardar
-                                    </button>
+                                <div className="mb-3">
+                                    <label>Contraseña</label>
+                                    <input type="text" className="form-control" value={currentProfesor.pass}
+                                        onChange={(e) => setCurrentProfesor({ ...currentProfesor, pass: e.target.value })}
+                                        required />
                                 </div>
-                            </form>
-                        </div>
+                                <div className="mb-3">
+                                    <label>Nombre</label>
+                                    <input type="text" className="form-control" value={currentProfesor.nombre}
+                                        onChange={(e) => setCurrentProfesor({ ...currentProfesor, nombre: e.target.value })}
+                                        required />
+                                </div>
+                                <div className="mb-3">
+                                    <label>Email</label>
+                                    <input type="email" className="form-control" value={currentProfesor.email}
+                                        onChange={(e) => setCurrentProfesor({ ...currentProfesor, email: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)}>Cancelar</button>
+                                <button type="submit" className="btn btn-primary">Guardar</button>
+                            </div>
+                        </form>
                     </div>
+                </div>
+            )}
 
-                )
-            }
+            {/* Modal columnas export */}
             {isColumnsModalOpen && (
                 <div className="modal show d-block" tabIndex="-1">
                     <div className="modal-dialog">
@@ -332,16 +305,9 @@ export const Profesores = () => {
                             <div className="modal-body">
                                 {columnasDisponibles.map((col) => (
                                     <div className="form-check" key={col.key}>
-                                        <input
-                                            className="form-check-input"
-                                            type="checkbox"
-                                            checked={selectedColumns.includes(col.key)}
-                                            onChange={() => toggleColumn(col.key)}
-                                            id={`col-${col.key}`}
-                                        />
-                                        <label className="form-check-label" htmlFor={`col-${col.key}`}>
-                                            {col.label}
-                                        </label>
+                                        <input className="form-check-input" type="checkbox" checked={selectedColumns.includes(col.key)}
+                                            onChange={() => toggleColumn(col.key)} id={`col-${col.key}`} />
+                                        <label className="form-check-label" htmlFor={`col-${col.key}`}>{col.label}</label>
                                     </div>
                                 ))}
                             </div>
@@ -352,10 +318,7 @@ export const Profesores = () => {
                         </div>
                     </div>
                 </div>
-
             )}
         </div>
     );
 }
-
-
