@@ -16,7 +16,7 @@ export function Asignaturas() {
     id: null,
     nombre: "",
     creditos: "",
-    profesor: "", // Cambiado a profesorId
+    profesor: "", 
   });
 
   const [currentPage, setCurrentPage] = useState(1);

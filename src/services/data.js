@@ -1,592 +1,372 @@
-const URL = 'http://localhost:5219/api/';
+// ==========================================
+// 🌍 CONFIGURACIÓN BASE SEGÚN EL ENTORNO
+// ==========================================
+const API_URL =
+  import.meta.env.VITE_API_BASE || "http://localhost:5219/api";
 
-export function login(usuario, pass){
-    let datos = {usuario, pass};
-
-    return fetch(URL + 'autenticacion', {
-        method: 'POST',
-        body: JSON.stringify(datos),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(res =>{
-        if(!res.ok) throw new Error('Error en la solicitud'+ res.status);
-        return res.text();
-    })
-    .then(text => text ? text : null);
+// Función auxiliar para manejar respuestas y errores
+async function handleResponse(res) {
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Error ${res.status}: ${text}`);
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }
 
-export function alumnoProfesor(usuario){
-    return fetch(`${URL}getAlumnosProfesor?usuario=${usuario}`)
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.json();
-    });
+// ==========================================
+// 🧩 AUTENTICACIÓN
+// ==========================================
+export async function login(usuario, pass) {
+  const datos = { usuario, pass };
+  const res = await fetch(`${API_URL}/autenticacion`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datos),
+  });
+  return handleResponse(res);
 }
 
-export function getAlumno(id){
-    return fetch(`${URL}getAlumno?id=${id}`)
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.json();
-    });
+// ==========================================
+// 🧑‍🏫 ALUMNOS Y MATRÍCULAS
+// ==========================================
+export async function alumnoProfesor(usuario) {
+  const res = await fetch(`${API_URL}/getAlumnosProfesor?usuario=${usuario}`);
+  return handleResponse(res);
 }
 
-export function insertarAlumnoMatricular(alumno, id_asig){
-    const url= `${URL}insertarMatricular?id_asig=${id_asig}`;
-    const body ={
-        dni: alumno.dni,
-        nombre: alumno.nombre,
-        direccion: alumno.direccion,
-        edad: Number(alumno.edad),
-        email: alumno.email
-    };
-
-    return fetch(url, {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.text();
-    });
+export async function getAlumno(id) {
+  const res = await fetch(`${API_URL}/getAlumno?id=${id}`);
+  return handleResponse(res);
 }
 
-export function actualizarAlumno(alumno){
-    return fetch(`${URL}actualizarAlumno`, {
-        method: 'PUT',
-        body: JSON.stringify(alumno),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.text();
-    });
-}
-
-export function eliminarAlumno(id){
-    return fetch(`${URL}eliminarAlumno?id=${id}`, {
-        method: 'DELETE'
-    })
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.text();
-    });
-}
-
-/* ASIGNATURAS */
-
-export function getAsignaturas(){
-    return fetch(`${URL}getAsignaturas`)
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.json();
-    });
-}
-// Obtener todas las asignaturas
-export function getAllAsignatura() {
-  return fetch(`${URL}getAllAsignaturas`)
-    .then(res => {
-      if (!res.ok) throw new Error('Error en la solicitud: ' + res.status);
-      return res.json();
-    });
-}
-
-// Obtener una asignatura por ID
-export function getAsignaturaId(id) {
-  return fetch(`${URL}getAsignaturaById?id=${id}`)
-    .then(res => {
-      if (!res.ok) throw new Error('Error en la solicitud: ' + res.status);
-      return res.json();
-    });
-}
-
-//Insertar nueva asignatura
-export function insertarAsignatura(asignatura) {
+export async function insertarAlumnoMatricular(alumno, id_asig) {
+  const url = `${API_URL}/insertarMatricular?id_asig=${id_asig}`;
   const body = {
-    nombre: asignatura.nombre,
-    creditos: Number(asignatura.creditos),
-    profesor: asignatura.profesor || null // opcional
+    dni: alumno.dni,
+    nombre: alumno.nombre,
+    direccion: alumno.direccion,
+    edad: Number(alumno.edad),
+    email: alumno.email,
   };
-
-  return fetch(`${URL}insertarAsignatura`, {
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  })
-  .then(async (res) => {
-    const text = await res.text();
-    if (!res.ok) throw new Error(`Error ${res.status}: ${text}`);
-    return text;
+    body: JSON.stringify(body),
   });
+  return handleResponse(res);
 }
 
-
-//Actulizar asignatura
-export function actualizarAsignatura (asignatura) {
-    const body = {
-        id: Number(asignatura.id),
-        nombre:asignatura.nombre,
-        creditos:Number(asignatura.creditos),
-        profesor:asignatura.profesor
-    };
-
-    return fetch(`${URL}actualizarAsignatura?id=${asignatura.id}`, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-    })
-    .then(async res => {
-        const text = await res.text();
-        if (!res.ok) throw new Error(`Error ${res.estatus}: ${text}`);
-        return text;
-    });
-}
-    //Eliminar 
-    export function eliminarAsignatura(id){
-    return fetch(`${URL}eliminarAsignatura?id=${id}`,{
-    method: 'DELETE'  
-    })
-    .then(async res => {
-    const text = await res.text();
-    if (!res.ok) throw new Error (`Error ${res.status}:${text}`);
-    return text;
-    });
-    }
-
-/* CALificACIONES */
-
-export function getCalificacionesProfesor(usuario){
-    return fetch(`${URL}calificaciones/profesor/${usuario}`)
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.json();
-    });
-}
-
-export function insertarCalificacion(calificacion){
-    const url = `${URL}insertCalificacion`;
-    const body = {
-        descripcion: calificacion.descripcion,
-        nota: Number(calificacion.nota),
-        porcentaje: Number(calificacion.porcentaje||0),
-        matriculaId: Number(calificacion.matriculaId)
-    };
-
-    return fetch(url, {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(async res => {
-        const text = await res.text();
-        if(!res.ok) throw new Error(`Error ${res.status}: ${text}`);
-        try{return JSON.parse(text);}catch{return text;}
-    });    
-}
-
-export function actualizarCalificacion(calificacion){
-    if(!calificacion.id)throw new Error("Falta el id de la calificacion para actualizar");
-
-    const url = `${URL}actualizarCalificacion/${calificacion.id}`;
-    const body = {
-        descripcion: calificacion.descripcion,
-        nota: Number(calificacion.nota),
-        porcentaje: Number(calificacion.porcentaje||0),
-        matriculaId: Number(calificacion.matriculaId)
-    };
-
-    return fetch(url, {
-        method: 'PUT',
-        body: JSON.stringify(body),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(async res => {
-        const text = await res.text();
-        if(!res.ok) throw new Error(`Error ${res.status}: ${text}`);
-        try{return JSON.parse(text);}catch{return text;}
-    });
-}
-
-export function eliminarCalificacion(id){
-    const url = `${URL}eliminarCalificacion/${id}`;
-
-    return fetch(url, {
-        method: 'DELETE'
-    })
-    .then(async res => {
-        const text = await res.text();
-        if(!res.ok) throw new Error(`Error ${res.status}: ${text}`);
-        return text;
-    });
-}
-
-/* PROFESORES */
-export function getProfesores(){
-    return fetch(`${URL}profesores`)
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.json();
-    });
-}
-export function getProfesor(usuario){
-    return fetch(`${URL}profesor/${usuario}`)
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.json();
-    });
-}
-
-export function insertarProfesor(profesor){
-    const url= `${URL}profesor`;
-    const body ={
-        usuario: profesor.usuario,
-        pass: profesor.pass,
-        nombre: profesor.nombre,
-        email: profesor.email
-        
-    };
-    return fetch(url, {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then( async res => {
-        const text = await res.text();
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status + text);
-        return text;
-    });
-}
-export function actualizarProfesor(usuario, profesor){
-    
-    const url = `${URL}profesor/${usuario}`;
-    const body = {
-        usuario: usuario,
-        pass: profesor.pass,
-        nombre: profesor.nombre,
-        email: profesor.email
-        
-    };
-    return fetch(url, {
-        method: 'PUT',
-        body: JSON.stringify(body),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then( async res => {
-        const text = await res.text();
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status + text);
-        return text;
-    });
-}
-export function eliminarProfesor(usuario){
-    return fetch(`${URL}profesor/${usuario}`, {
-        method: 'DELETE'
-    })
-    .then( async res => {
-        const text = await res.text();
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status + text);
-        return text;
-    });
-}
-
-//---------------------------------------------------------
-// GRAFICAS
-//---------------------------------------------------------
-
-// Obtener alumnos por asignatura
-export function getAlumnosPorAsignatura() {
-    return fetch(`${URL}getAlumnosPorAsignatura`)
-        .then(res => {
-            if (!res.ok) throw new Error('Error en la solicitud: ' + res.status);
-            return res.json();
-        });
-}
-
-// Obtener distribucion de calificaciones
-export function getDistribucionCalificaciones() {
-    return fetch(`${URL}getDistribucionCalificaciones`)
-        .then(res => {
-            if (!res.ok) throw new Error("Error en la solicitud: " + res.status);
-            return res.json();
-        });
-}
-
-/* FACTURAS */
-export function getFactura1(){
-    return fetch(`${URL}getFacturas`)
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.json();
-    });
-}
-export function getFactura2(id){
-    return fetch(`${URL}getFacturasId?id=${id}`)
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.json();
-    });
-}
-
-export function insertarFactura(factura){
-    const url= `${URL}insertarFacturas`;
-    const body ={
-  descripcion: factura.descripcion,
-  stock: factura.stock,
-  precioventa: factura.precioventa,
-  idcategoria: factura.idcategoria,
-  fechaingreso: factura.fechaingreso,
-  fechacaducidad: factura.fechacaducidad,
-    };
-    return fetch(url, {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then( async res => {
-        const text = await res.text();
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status + text);
-        return text;
-    });
-}
-
-export function actualizarFacturas(facturas){
-    return fetch(`${URL}actualizarFacturas`, {
-        method: 'PUT',
-        body: JSON.stringify(facturas),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.text();
-    });
-}
-
-export function eliminarFacturas(id){
-    return fetch(`${URL}eliminarFacturas?id=${id}`, {
-        method: 'DELETE'
-    })
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.text();
-    });
-}
-
-/* CLIENTES */
-export function getClientes1(){
-    return fetch(`${URL}getClientes`)
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.json();
-    });
-}
-export function getClientes2(id){
-    return fetch(`${URL}getClientesId?id=${id}`)
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.json();
-    });
-}
-
-export function insertarCliente(cliente){
-    const url= `${URL}insertarClientes`;
-    const body ={
-  idcliente: cliente.idcliente,
-  direccion: cliente.direccion,
-  telefono: cliente.telefono,
-  email: cliente.email
-    };
-    return fetch(url, {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then( async res => {
-        const text = await res.text();
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status + text);
-        return text;
-    });
-}
-
-export function actualizarCliente(cliente){
-    return fetch(`${URL}actualizarClientes`, {
-        method: 'PUT',
-        body: JSON.stringify(cliente),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(res => {
-        if(!res.ok) throw new Error('Error en la solicitud' + res.status);
-        return res.text();
-    });
-}
-
-export function eliminarCliente(id){
-    const endpoint = `${URL.replace(/\/$/, '')}/eliminarClientes/${id}`; // ID en la ruta
-    return fetch(endpoint, { method: 'DELETE' })
-        .then(res => {
-            if(!res.ok) throw new Error('Error en la solicitud: ' + res.status);
-            return res.text(); // o res.json() si tu backend devuelve JSON
-        });
-}
-
-// ===============================
-// PRODUCTOS
-// ===============================
-
-function handle(res) {
-  if (!res.ok) throw new Error("Error en la solicitud: " + res.status);
-  return res.json();
-}
-
-export function getProductos() {
-  return fetch(`${URL}getProductos`).then(handle);
-}
-
-export function getProducto(id) {
-  return fetch(`${URL}getProductoId?id=${encodeURIComponent(id)}`).then(handle);
-}
-
-export function insertarProducto(producto) {
-  return fetch(`${URL}insertarProducto`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      descripcion: producto.descripcion,
-      stock: Number(producto.stock),
-      precioventa: Number(producto.precioventa), // debe coincidir con el backend
-      idcategoria: Number(producto.idcategoria),
-      fechaingreso: producto.fechaingreso,
-      fechacaducidad: producto.fechacaducidad,
-    }),
-  }).then(async (res) => {
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error("Error en la solicitud: " + res.status + " - " + text);
-    }
-    return res.text();
-  });
-}
-
-export function actualizarProducto(producto) {
-  return fetch(`${URL}actualizarProducto`, {
+export async function actualizarAlumno(alumno) {
+  const res = await fetch(`${API_URL}/actualizarAlumno`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      idproducto: Number(producto.idproducto),
-      descripcion: producto.descripcion,
-      stock: Number(producto.stock),
-      precioventa: Number(producto.precioventa),
-      idcategoria: Number(producto.idcategoria),
-      fechaingreso: producto.fechaingreso,
-      fechacaducidad: producto.fechacaducidad,
-    }),
-  }).then(async (res) => {
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error("Error en la solicitud: " + res.status + " - " + text);
-    }
-    return res.text();
+    body: JSON.stringify(alumno),
   });
+  return handleResponse(res);
 }
 
-export function eliminarProducto(id) {
-  return fetch(`${URL}eliminarProducto?id=${encodeURIComponent(id)}`, {
+export async function eliminarAlumno(id) {
+  const res = await fetch(`${API_URL}/eliminarAlumno?id=${id}`, {
     method: "DELETE",
-  }).then(async (res) => {
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error("Error en la solicitud: " + res.status + " - " + text);
-    }
-    return res.text();
   });
-}
-/* ===============================
-   PROVEEDORES
-   =============================== */
-
-export function getProveedores() {
-    return fetch(`${URL}Proveedores`)
-        .then(res => {
-            if (!res.ok) throw new Error('Error en la solicitud ' + res.status);
-            return res.json();
-        });
+  return handleResponse(res);
 }
 
-export function getProveedor(id) {
-    return fetch(`${URL}Proveedores/${id}`)
-        .then(res => {
-            if (!res.ok) throw new Error('Error en la solicitud ' + res.status);
-            return res.json();
-        });
+// ==========================================
+// 📘 ASIGNATURAS
+// ==========================================
+export async function getAsignaturas() {
+  const res = await fetch(`${API_URL}/getAsignaturas`);
+  return handleResponse(res);
 }
 
-export function insertarProveedor(proveedor) {
-    const url = `${URL}Proveedores`; // POST a /api/Proveedores
-    const body = {
-        descripcion: proveedor.descripcion,
-        direccion: proveedor.direccion,
-        nit: proveedor.nit,
-        estado: proveedor.estado
-    };
-
-    return fetch(url, {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: { 'Content-Type': 'application/json' }
-    })
-    .then(async res => {
-        const text = await res.text();
-        if (!res.ok) throw new Error('Error en la solicitud ' + res.status + ': ' + text);
-        return text;
-    });
+export async function getAllAsignatura() {
+  const res = await fetch(`${API_URL}/getAllAsignaturas`);
+  return handleResponse(res);
 }
 
-export function actualizarProveedor(proveedor) {
-  const url = `${URL}Proveedores/${proveedor.idproveedor}`;
+export async function getAsignaturaId(id) {
+  const res = await fetch(`${API_URL}/getAsignaturaById?id=${id}`);
+  return handleResponse(res);
+}
 
-  return fetch(url, {
-    method: "PUT",
+export async function insertarAsignatura(asignatura) {
+  const res = await fetch(`${API_URL}/insertarAsignatura`, {
+    method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      descripcion: proveedor.descripcion,
-      direccion: proveedor.direccion,
-      nit: proveedor.nit,
-      estado: proveedor.estado,
+      nombre: asignatura.nombre,
+      creditos: Number(asignatura.creditos),
+      profesor: asignatura.profesor || null,
     }),
-  }).then(async (res) => {
-    const text = await res.text();
-    if (!res.ok) throw new Error("Error en la solicitud " + res.status + ": " + text);
-    return text;
   });
+  return handleResponse(res);
 }
 
-export function eliminarProveedor(id) {
-    const url = `${URL}Proveedores/${id}`; // DELETE /api/Proveedores/{id}
-    return fetch(url, { method: 'DELETE' })
-        .then(async res => {
-            const text = await res.text();
-            if (!res.ok) throw new Error('Error en la solicitud ' + res.status + ': ' + text);
-            return text;
-        });
+export async function actualizarAsignatura(asignatura) {
+  const res = await fetch(
+    `${API_URL}/actualizarAsignatura?id=${asignatura.id}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(asignatura),
+    }
+  );
+  return handleResponse(res);
+}
+
+export async function eliminarAsignatura(id) {
+  const res = await fetch(`${API_URL}/eliminarAsignatura?id=${id}`, {
+    method: "DELETE",
+  });
+  return handleResponse(res);
+}
+
+// ==========================================
+// 🧾 CALIFICACIONES
+// ==========================================
+export async function getCalificacionesProfesor(usuario) {
+  const res = await fetch(`${API_URL}/calificaciones/profesor/${usuario}`);
+  return handleResponse(res);
+}
+
+export async function insertarCalificacion(calificacion) {
+  const res = await fetch(`${API_URL}/insertCalificacion`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      descripcion: calificacion.descripcion,
+      nota: Number(calificacion.nota),
+      porcentaje: Number(calificacion.porcentaje || 0),
+      matriculaId: Number(calificacion.matriculaId),
+    }),
+  });
+  return handleResponse(res);
+}
+
+export async function actualizarCalificacion(calificacion) {
+  if (!calificacion.id)
+    throw new Error("Falta el id de la calificación para actualizar");
+
+  const res = await fetch(
+    `${API_URL}/actualizarCalificacion/${calificacion.id}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(calificacion),
+    }
+  );
+  return handleResponse(res);
+}
+
+export async function eliminarCalificacion(id) {
+  const res = await fetch(`${API_URL}/eliminarCalificacion/${id}`, {
+    method: "DELETE",
+  });
+  return handleResponse(res);
+}
+
+// ==========================================
+// 👨‍🏫 PROFESORES
+// ==========================================
+export async function getProfesores() {
+  const res = await fetch(`${API_URL}/profesores`);
+  return handleResponse(res);
+}
+
+export async function getProfesor(usuario) {
+  const res = await fetch(`${API_URL}/profesor/${usuario}`);
+  return handleResponse(res);
+}
+
+export async function insertarProfesor(profesor) {
+  const res = await fetch(`${API_URL}/profesor`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(profesor),
+  });
+  return handleResponse(res);
+}
+
+export async function actualizarProfesor(usuario, profesor) {
+  const res = await fetch(`${API_URL}/profesor/${usuario}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(profesor),
+  });
+  return handleResponse(res);
+}
+
+export async function eliminarProfesor(usuario) {
+  const res = await fetch(`${API_URL}/profesor/${usuario}`, {
+    method: "DELETE",
+  });
+  return handleResponse(res);
+}
+
+// ==========================================
+// 📊 GRAFICAS
+// ==========================================
+export async function getAlumnosPorAsignatura() {
+  const res = await fetch(`${API_URL}/getAlumnosPorAsignatura`);
+  return handleResponse(res);
+}
+
+export async function getDistribucionCalificaciones() {
+  const res = await fetch(`${API_URL}/getDistribucionCalificaciones`);
+  return handleResponse(res);
+}
+
+// ==========================================
+// 💵 FACTURAS
+// ==========================================
+export async function getFactura1() {
+  const res = await fetch(`${API_URL}/getFacturas`);
+  return handleResponse(res);
+}
+
+export async function getFactura2(id) {
+  const res = await fetch(`${API_URL}/getFacturasId?id=${id}`);
+  return handleResponse(res);
+}
+
+export async function insertarFactura(factura) {
+  const res = await fetch(`${API_URL}/insertarFacturas`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(factura),
+  });
+  return handleResponse(res);
+}
+
+export async function actualizarFacturas(facturas) {
+  const res = await fetch(`${API_URL}/actualizarFacturas`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(facturas),
+  });
+  return handleResponse(res);
+}
+
+export async function eliminarFacturas(id) {
+  const res = await fetch(`${API_URL}/eliminarFacturas?id=${id}`, {
+    method: "DELETE",
+  });
+  return handleResponse(res);
+}
+
+// ==========================================
+// 🧍 CLIENTES
+// ==========================================
+export async function getClientes1() {
+  const res = await fetch(`${API_URL}/getClientes`);
+  return handleResponse(res);
+}
+
+export async function getClientes2(id) {
+  const res = await fetch(`${API_URL}/getClientesId?id=${id}`);
+  return handleResponse(res);
+}
+
+export async function insertarCliente(cliente) {
+  const res = await fetch(`${API_URL}/insertarClientes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cliente),
+  });
+  return handleResponse(res);
+}
+
+export async function actualizarCliente(cliente) {
+  const res = await fetch(`${API_URL}/actualizarClientes`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cliente),
+  });
+  return handleResponse(res);
+}
+
+export async function eliminarCliente(id) {
+  const res = await fetch(`${API_URL}/eliminarClientes/${id}`, {
+    method: "DELETE",
+  });
+  return handleResponse(res);
+}
+
+// ==========================================
+// 📦 PRODUCTOS
+// ==========================================
+export async function getProductos() {
+  const res = await fetch(`${API_URL}/getProductos`);
+  return handleResponse(res);
+}
+
+export async function getProducto(id) {
+  const res = await fetch(`${API_URL}/getProductoId?id=${id}`);
+  return handleResponse(res);
+}
+
+export async function insertarProducto(producto) {
+  const res = await fetch(`${API_URL}/insertarProducto`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(producto),
+  });
+  return handleResponse(res);
+}
+
+export async function actualizarProducto(producto) {
+  const res = await fetch(`${API_URL}/actualizarProducto`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(producto),
+  });
+  return handleResponse(res);
+}
+
+export async function eliminarProducto(id) {
+  const res = await fetch(`${API_URL}/eliminarProducto?id=${id}`, {
+    method: "DELETE",
+  });
+  return handleResponse(res);
+}
+
+// ==========================================
+// 🏭 PROVEEDORES
+// ==========================================
+export async function getProveedores() {
+  const res = await fetch(`${API_URL}/Proveedores`);
+  return handleResponse(res);
+}
+
+export async function getProveedor(id) {
+  const res = await fetch(`${API_URL}/Proveedores/${id}`);
+  return handleResponse(res);
+}
+
+export async function insertarProveedor(proveedor) {
+  const res = await fetch(`${API_URL}/Proveedores`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(proveedor),
+  });
+  return handleResponse(res);
+}
+
+export async function actualizarProveedor(proveedor) {
+  const res = await fetch(`${API_URL}/Proveedores/${proveedor.idproveedor}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(proveedor),
+  });
+  return handleResponse(res);
+}
+
+export async function eliminarProveedor(id) {
+  const res = await fetch(`${API_URL}/Proveedores/${id}`, {
+    method: "DELETE",
+  });
+  return handleResponse(res);
 }
